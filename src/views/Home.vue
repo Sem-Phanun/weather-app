@@ -8,15 +8,15 @@
                 class="py-2 px-1 w-full bg-transparent border-b focus:border-weather-secondary focus:outline-none focus:shadow-[0px_1px_0_0_#004E71]"
             />
             <ul class="absolute bg-weather-secondary text-white w-full shadow-md py-2 px-1 top-[66px]"
-                v-if="openWeatherSearchResults"
+                v-if="mapboxSearchResults"
             >
                 <p v-if="searchError">Sorry, some thing when wrong please try again.</p>
-                <p v-if="!searchError && openWeatherSearchResults.length === 0">
+                <p v-if="!searchError && mapboxSearchResults.length === 0">
                     No results match your query, try a different term.
                 </p>
                 
                 <template v-else>
-                    <li v-for="searchResult in openWeatherSearchResults" :key="searchResult.id"
+                    <li v-for="searchResult in mapboxSearchResults" :key="searchResult.id"
                         @click="previewCity(searchResult)"
                         class="py-2 cursor-pointer"
                     >
@@ -25,6 +25,14 @@
                 </template>
             </ul>
         </div>
+        <div class="flex flex-col gap-4">
+            <Suspense>
+              <CityList />
+              <template #fallback>
+                <CityCardSkeleton/>
+              </template>
+            </Suspense>
+        </div>
     </main>
 </template>
 
@@ -32,15 +40,16 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router';
+import CityList from '../components/CityList.vue';
+import CityCardSkeleton from '../components/CityCardSkeleton.vue'
 
 const router = useRouter()
 const mapboxAPIKey =
   "pk.eyJ1Ijoiam9obmtvbWFybmlja2kiLCJhIjoiY2t5NjFzODZvMHJkaDJ1bWx6OGVieGxreSJ9.IpojdT3U3NENknF6_WhR2Q";
-const openWeatherApiKey = "87827d49e501833a411130e6b0e300a1"
 
 const searchQuery = ref("")
 const queryTimeout = ref(null)
-const openWeatherSearchResults = ref(null)
+const mapboxSearchResults = ref(null)
 const searchError = ref(null)
 
 const previewCity = (searchResult) => {
@@ -50,8 +59,6 @@ const previewCity = (searchResult) => {
         name: "city",
         params: {state: state.replaceAll(" ", ""), city: city},
         query: {
-            // lat: searchResult.lat,
-            // lon: searchResult.lon,
             lat: searchResult.geometry.coordinates[1],
             lon: searchResult.geometry.coordinates[0],
             preview: true
@@ -66,18 +73,16 @@ const getSearchResult = () => {
         if(searchQuery.value !== ""){
             try {
                 
-                //const result = await axios.get(`http://api.openweathermap.org/geo/1.0/direct?q=${searchQuery.value}&limit=5&appid=${openWeatherApiKey}`)
                 const result = await axios.get(
                     `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchQuery.value}.json?access_token=${mapboxAPIKey}&types=place`
                 );
-                openWeatherSearchResults.value = result.data.features
-                console.log(openWeatherSearchResults.value)
+                mapboxSearchResults.value = result.data.features
             } catch (error) {
                 searchError.value(error)
             }
             return;
         }
-        openWeatherSearchResults.value = null
+        mapboxSearchResults.value = null
     }, 300)
 }
 </script>

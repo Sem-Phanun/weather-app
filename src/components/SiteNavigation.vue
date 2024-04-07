@@ -13,6 +13,7 @@
                 ></i>
                 <i class="fa-solid fa-plus text-xl hover:text-weather-secondary duration-150 cursor-pointer"
                   @click="addCity"
+                  v-if="route.query"
                 ></i>
             </div>
 
@@ -65,34 +66,36 @@ const modalActive = ref(null)
 const toggleModal = () => {
     modalActive.value = !modalActive.value
 }
-const saveCities = ref([])
+const savedCities = ref([])
 const route = useRoute()
 const router = useRouter()
 const addCity = () => {
-  if(localStorage.getItem("saveCities")){
-    saveCities.value = JSON.parse(
-      localStorage.getItem("saveCities")
+  if(localStorage.getItem("savedCities")){
+    savedCities.value = JSON.parse(
+      localStorage.getItem("savedCities")
     )
   }
   const locationObj = {
     id: uid(),
     state: route.params.state,
     city: route.params.city,
-    corrds: {
+    coords: {
       lat: route.query.lat,
       lon: route.query.lon
-    }
+    },
+
   }
 
-  saveCities.value.push(locationObj)
+  savedCities.value.push(locationObj)
   localStorage.setItem(
-    "saveCities",
-    JSON.stringify(saveCities.value)
+    "savedCities",
+    JSON.stringify(savedCities.value)
   )
-  const modalActive = ref(null)
-  const toogleModal = () => {
-    modalActive.value = !modalActive.value
-  }
+  let query = Object.assign({}, route.query)
+  delete query.preview
+  query.id = locationObj.id;
+  router.replace({ query })
 }
+
 
 </script>
